@@ -41,6 +41,7 @@ def test_get_sentiment():
     Test whether we get the sentiments we expect.
     """
     nltk.download('punkt')
+    nltk.download('movie_reviews')
     ground_truth = ['pos', 'pos', 'pos', 'pos', 'pos']
     articles = sentiment.parse_downloaded_file('./tests/data/trial_output.txt')
     for t, article in zip(ground_truth, articles):
