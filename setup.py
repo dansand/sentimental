@@ -5,5 +5,5 @@ setup(
     entry_points='''
     [console_scripts]
     sentimental=sentiment.sentiment:cli
-    ''', install_requires=['newspaper3k', 'click', 'bs4']
+    ''', install_requires=['newspaper3k', 'click', 'bs4', 'nltk']
 )
