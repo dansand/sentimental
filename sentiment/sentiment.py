@@ -2,8 +2,9 @@ import io
 import re
 
 import click
-import pickle
 import requests
+import nltk
+from nltk.corpus import movie_reviews
 from bs4 import BeautifulSoup
 from newspaper import Article
 from collections import namedtuple
@@ -46,7 +47,52 @@ def get_sentiment(input_file):
     :return:
     """
 
-    parse_downloaded_file(input_file)
+    articles = parse_downloaded_file(input_file)
+    for article in articles:
+        analyse(article.body)
+
+
+def features(words):
+    """
+    Using a simplified bag of words model. Features are the words themselves.
+    :param words: List of words to analyse.
+    :return: Dictionary of words with tag 'True'.
+    """
+    return dict([(word, True) for word in words])
+
+
+def analyse(raw_text):
+    """
+    Perform sentiment analysis on a string.
+    :param raw_text: String of interest.
+    :type raw_text: str
+    :return:
+    """
+
+    # Tokenize the raw text and transform to something NLTK understands.
+    text = nltk.word_tokenize(raw_text)
+    query = features(text)
+
+    # Get positive and negative reviews.
+    neg_ids = movie_reviews.fileids('neg')
+    pos_ids = movie_reviews.fileids('pos')
+
+    # Get the words in each review.
+    neg_features = [(features(movie_reviews.words(fileids=[f])), 'neg')
+                    for f in neg_ids]
+    pos_features = [(features(movie_reviews.words(fileids=[f])), 'pos')
+                    for f in pos_ids]
+
+    # Get percentage to use in training.
+    cutoff = int(len(neg_features) * 3 / 4)
+
+    # Separate into training and testing sets.
+    train = neg_features[:cutoff] + pos_features[:cutoff]
+    test = neg_features[cutoff:] + pos_features[cutoff:]
+
+    # Train with NaiveBayes classifier.
+    classifier = nltk.classify.NaiveBayesClassifier.train(train)
+    return classifier.classify(query)
 
 
 def parse_downloaded_file(input_file):
