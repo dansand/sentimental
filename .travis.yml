@@ -7,4 +7,4 @@ install:
   - pip install -v -e .
 
 script:
-  - sentimental --help
+  - py.test

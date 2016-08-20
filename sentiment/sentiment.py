@@ -1,3 +1,5 @@
+import io
+
 import click
 import requests
 from bs4 import BeautifulSoup
@@ -15,16 +17,23 @@ def cli():
 
     pass
 
-
 @cli.command()
-def get_articles():
+@click.option('--url', help='Search URL returned by a Google News query', type=str, required=True)
+def get_articles(url):
+    """
+    Search, query, and download articles from the web.
+    :param url: URL string from a Google News query.
+    """
+
+    get_articles_run(url)
+
+
+def get_articles_run(url):
     """
     Search, query, and download articles from the web.
     """
 
     # Get raw html from server.
-    url = 'https://www.google.com/search?cf=all&hl=en&pz=1&ned=ca&tbm=nws&gl=ca&as_q' \
-          '=Makayla%20Sault&as_occt=any&tbs=ar%3A1&authuser=0'
     raw = requests.get(url)
 
     # Parse html.
@@ -39,7 +48,7 @@ def get_articles():
             valid_links.append(trial_link[7:].split('&')[0])
 
     # Remove duplicates
-    valid_links = list(set(valid_links))
+    valid_links = sorted(list(set(valid_links)))
 
     # Download articles
     full_text = []
@@ -49,19 +58,19 @@ def get_articles():
             article.download()
             article.parse()
             full_text.append(
-                {"authors": ','.join(article.authors),
+                {"authors": u','.join(article.authors).encode('utf-8'),
                  "date": article.publish_date,
-                 "title": article.title,
-                 "body": article.text,
+                 "title": u''.join(article.title).encode('utf-8'),
+                 "body": u''.join(article.text).encode('utf-8'),
                  'additional': article.meta_data})
 
     # Write formatted output to file
-    with open('output.txt', 'w') as fh:
+    with io.open('output.txt', 'w', encoding='utf-8') as fh:
         for article in full_text:
             # Header
             fh.write('-' * 80 + '\n')
-            fh.write('AUTHORS:  ' + article['authors'] + '\n')
-            fh.write('TITLE:    ' + article['title'] + '\n')
+            fh.write('AUTHORS:  ' + article['authors'].decode('utf-8') + '\n')
+            fh.write('TITLE:    ' + article['title'].decode('utf-8') + '\n')
             fh.write('-' * 80 + '\n')
             # Article
-            fh.write(article['body'] + '\n\n')
+            fh.write(article['body'].decode('utf-8') + '\n\n')
